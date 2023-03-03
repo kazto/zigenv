@@ -40,7 +40,11 @@ if [ "$ZIGENV_VERSION" = "system" ]; then
   PATH="$(remove_from_path "${ZIGENV_ROOT}/shims")" \
   ZIGENV_COMMAND_PATH="$(command -v "$ZIGENV_COMMAND" || true)"
 else
-  ZIGENV_COMMAND_PATH="${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}/bin/${ZIGENV_COMMAND}"
+  if [ "$ZIGENV_COMMAND" = "zig" ]; then
+    ZIGENV_COMMAND_PATH="${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}/zig"
+  else
+    ZIGENV_COMMAND_PATH="${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}/bin/${ZIGENV_COMMAND}"
+  fi
 fi
 
 OLDIFS="$IFS"
