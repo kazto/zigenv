@@ -84,8 +84,10 @@ list_executable_names() {
   local version file
   zigenv-versions --bare --skip-aliases | \
   while read -r version; do
-    for file in "${ZIGENV_ROOT}/versions/${version}/bin/"*; do
-      echo "${file##*/}"
+    for file in "${ZIGENV_ROOT}/versions/${version}/bin/"* "${ZIGENV_ROOT}/versions/${version}/"* ; do
+      if [ -f "$file" ] && [ -x "$file" ] ; then
+        echo "${file##*/}"
+      fi
     done
   done
 }

@@ -26,6 +26,7 @@ if [ -z "$ZIGENV_TEST_DIR" ]; then
   export ZIGENV_HOOK_PATH=$ZIGENV_ROOT/zigenv.d:$BATS_TEST_DIRNAME/../zigenv.d
 
   PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+  PATH="${ZIGENV_TEST_DIR}:$PATH"
   PATH="${ZIGENV_TEST_DIR}/bin:$PATH"
   PATH="${BATS_TEST_DIRNAME}/../libexec:$PATH"
   PATH="${BATS_TEST_DIRNAME}/libexec:$PATH"

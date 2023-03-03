@@ -88,7 +88,7 @@ sort_versions() {
 }
 
 # Include "system" in the non-bare output, if it exists
-if [ -n "$include_system" ] && ZIGENV_VERSION=system zigenv-which node >/dev/null 2>&1; then
+if [ -n "$include_system" ] && ZIGENV_VERSION=system zigenv-which zig >/dev/null 2>&1; then
   print_version system
 fi
 

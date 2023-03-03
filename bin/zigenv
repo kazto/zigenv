@@ -69,10 +69,11 @@ export ZIGENV_DIR
 shopt -s nullglob
 
 bin_path="$(abs_dirname "$0")"
+libexec_path="$(abs_dirname $(dirname "$0")/../libexec/)"
 for plugin_bin in "${ZIGENV_ROOT}/plugins/"*/bin; do
   PATH="${plugin_bin}:${PATH}"
 done
-export PATH="${bin_path}:${PATH}"
+export PATH="${bin_path}:${libexec_path}:${PATH}"
 
 ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH}:${ZIGENV_ROOT}/zigenv.d"
 if [ "${bin_path%/*}" != "$ZIGENV_ROOT" ]; then

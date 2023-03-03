@@ -3,8 +3,9 @@
 load test_helper
 
 create_executable() {
-  local bin="${ZIGENV_ROOT}/versions/${1}/bin"
-  mkdir -p "$bin"
+  local bin="${ZIGENV_ROOT}/versions/${1}"
+  local dir="$(dirname ${2})"
+  mkdir -p "${bin}/${dir}"
   touch "${bin}/$2"
   chmod +x "${bin}/$2"
 }
@@ -35,13 +36,16 @@ create_executable() {
 }
 
 @test "creates shims" {
-  create_executable "0.10.26" "node"
-  create_executable "0.10.26" "npm"
-  create_executable "0.11.11" "node"
-  create_executable "0.11.11" "npm"
+  create_executable "0.10.26" "bin/node"
+  create_executable "0.10.26" "bin/npm"
+  create_executable "0.10.26" "zig"
+  create_executable "0.11.11" "bin/node"
+  create_executable "0.11.11" "bin/npm"
+  create_executable "0.11.11" "zig"
 
   assert [ ! -e "${ZIGENV_ROOT}/shims/node" ]
   assert [ ! -e "${ZIGENV_ROOT}/shims/npm" ]
+  assert [ ! -e "${ZIGENV_ROOT}/shims/zig" ]
 
   run zigenv-rehash
   assert_success
@@ -52,6 +56,7 @@ create_executable() {
   assert_output - <<OUT
 node
 npm
+zig
 OUT
 }
 
@@ -71,10 +76,13 @@ OUT
 }
 
 @test "do exact matches when removing stale shims" {
-  create_executable "2.0" "unicorn_rails"
-  create_executable "2.0" "rspec-core"
+  mkdir -p "${ZIGENV_ROOT}/shims"
+  create_executable "2.0" "bin/unicorn_rails"
+  create_executable "2.0" "bin/rspec-core"
 
-  zigenv-rehash
+  run zigenv-rehash
+  assert [ -d "${ZIGENV_ROOT}/versions/2.0/bin" ]
+  assert [ -e "${ZIGENV_ROOT}/shims/rspec-core" ]
 
   cp "$ZIGENV_ROOT"/shims/{rspec-core,rspec}
   cp "$ZIGENV_ROOT"/shims/{rspec-core,rails}
@@ -91,8 +99,9 @@ OUT
 }
 
 @test "binary install locations containing spaces" {
-  create_executable "dirname1 p247" "node"
-  create_executable "dirname2 preview1" "npm"
+  mkdir -p "${ZIGENV_ROOT}/shims"
+  create_executable "dirname1 p247" "bin/node"
+  create_executable "dirname2 preview1" "bin/npm"
 
   assert [ ! -e "${ZIGENV_ROOT}/shims/node" ]
   assert [ ! -e "${ZIGENV_ROOT}/shims/npm" ]
@@ -122,7 +131,8 @@ SH
 }
 
 @test "sh-rehash in bash" {
-  create_executable "2.0" "node"
+  mkdir -p "${ZIGENV_ROOT}/shims"
+  create_executable "2.0" "bin/node"
   ZIGENV_SHELL=bash run zigenv-sh-rehash
   assert_success
   assert_output "hash -r 2>/dev/null || true"
@@ -130,7 +140,8 @@ SH
 }
 
 @test "sh-rehash in fish" {
-  create_executable "2.0" "node"
+  mkdir -p "${ZIGENV_ROOT}/shims"
+  create_executable "2.0" "bin/node"
   ZIGENV_SHELL=fish run zigenv-sh-rehash
   assert_success
   refute_output

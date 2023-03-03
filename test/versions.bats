@@ -12,7 +12,7 @@ setup() {
 }
 
 stub_system_node() {
-  local stub="${ZIGENV_TEST_DIR}/bin/node"
+  local stub="${ZIGENV_TEST_DIR}/zig"
   mkdir -p "$(dirname "$stub")"
   touch "$stub" && chmod +x "$stub"
 }
@@ -195,6 +195,7 @@ OUT
 }
 
 @test "recurses into lts subdirectory" {
+  stub_system_node
   create_version "2.0.0"
   mkdir "${ZIGENV_ROOT}/versions/lts"
   create_version "lts/argon"
@@ -212,6 +213,7 @@ OUT
 }
 
 @test "does not recurse into non-lts subdirectories" {
+  stub_system_node
   create_version "2.0.0"
   mkdir "${ZIGENV_ROOT}/versions/other"
   create_version "other/1.2.3"
@@ -226,6 +228,7 @@ OUT
 }
 
 @test "lists version named lts" {
+  stub_system_node
   create_version "2.0.0"
   create_version "lts"
 
@@ -240,6 +243,7 @@ OUT
 }
 
 @test "lists alias named lts" {
+  stub_system_node
   create_version "2.0.0"
   ln -s "2.0.0" "${ZIGENV_ROOT}/versions/lts"
 
