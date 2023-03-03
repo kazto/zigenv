@@ -1,0 +1,15 @@
+/plugins
+/shims
+/version
+/versions
+/sources
+/cache
+/libexec/*.dylib
+/src/Makefile
+/src/*.o
+/node_modules
+
+# from zigenv-default-packages plugin: https://github.com/zigenv/zigenv-default-packages
+/default-packages
+
+/zigenv-zigenv-*.tgz

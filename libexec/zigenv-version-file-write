@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: zigenv version-file-write <file> <version>
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+ZIGENV_VERSION_FILE="$1"
+ZIGENV_VERSION="$2"
+
+if [ -z "$ZIGENV_VERSION" ] || [ -z "$ZIGENV_VERSION_FILE" ]; then
+  zigenv-help --usage version-file-write >&2
+  exit 1
+fi
+
+# Make sure the specified version is installed.
+zigenv-prefix "$ZIGENV_VERSION" >/dev/null
+
+# Write the version out to disk.
+echo "$ZIGENV_VERSION" > "$ZIGENV_VERSION_FILE"

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Usage: zigenv version-file [<dir>]
+# Summary: Detect the file that sets the current zigenv version
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+target_dir="$1"
+
+find_local_version_file() {
+  local root="$1"
+  while ! [[ "$root" =~ ^//[^/]*$ ]]; do
+    if [ -s "${root}/.zig-version" ]; then
+      echo "${root}/.zig-version"
+      return 0
+    fi
+    [ -n "$root" ] || break
+    root="${root%/*}"
+  done
+  return 1
+}
+
+if [ -n "$target_dir" ]; then
+  find_local_version_file "$target_dir"
+else
+  find_local_version_file "$ZIGENV_DIR" || {
+    [ "$ZIGENV_DIR" != "$PWD" ] && find_local_version_file "$PWD"
+  } || echo "${ZIGENV_ROOT}/version"
+fi

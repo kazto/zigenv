@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -e
+
+if [ "$1" = "--debug" ]; then
+  export ZIGENV_DEBUG=1
+  shift
+fi
+
+if [ -n "$ZIGENV_DEBUG" ]; then
+  export PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+  set -x
+fi
+
+abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "zigenv: $*"
+    fi
+  } >&2
+  exit 1
+}
+
+if enable -f "${BASH_SOURCE%/*}"/../libexec/zigenv-realpath.dylib realpath 2>/dev/null; then
+  abs_dirname() {
+    local path
+    path="$(realpath "$1")"
+    echo "${path%/*}"
+  }
+else
+  READLINK=$(type -p greadlink readlink 2>/dev/null | head -1)
+  [ -n "$READLINK" ] || abort "cannot find readlink - are you missing GNU coreutils?"
+
+  resolve_link() {
+    $READLINK "$1"
+  }
+
+  abs_dirname() {
+    local cwd="$PWD"
+    local path="$1"
+
+    while [ -n "$path" ]; do
+      cd "${path%/*}"
+      local name="${path##*/}"
+      path="$(resolve_link "$name" || true)"
+    done
+
+    pwd
+    cd "$cwd"
+  }
+fi
+
+if [ -z "${ZIGENV_ROOT}" ]; then
+  ZIGENV_ROOT="${HOME}/.zigenv"
+else
+  ZIGENV_ROOT="${ZIGENV_ROOT%/}"
+fi
+export ZIGENV_ROOT
+
+if [ -z "${ZIGENV_DIR}" ]; then
+  ZIGENV_DIR="$PWD"
+else
+  [[ $ZIGENV_DIR == /* ]] || ZIGENV_DIR="$PWD/$ZIGENV_DIR"
+  cd "$ZIGENV_DIR" 2>/dev/null || abort "cannot change working directory to \`$ZIGENV_DIR'"
+  ZIGENV_DIR="$PWD"
+  cd "$OLDPWD"
+fi
+export ZIGENV_DIR
+
+
+shopt -s nullglob
+
+bin_path="$(abs_dirname "$0")"
+for plugin_bin in "${ZIGENV_ROOT}/plugins/"*/bin; do
+  PATH="${plugin_bin}:${PATH}"
+done
+export PATH="${bin_path}:${PATH}"
+
+ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH}:${ZIGENV_ROOT}/zigenv.d"
+if [ "${bin_path%/*}" != "$ZIGENV_ROOT" ]; then
+  # Add zigenv's own `zigenv.d` unless zigenv was cloned to ZIGENV_ROOT
+  ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH}:${bin_path%/*}/zigenv.d"
+fi
+ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH}:/usr/local/etc/zigenv.d:/etc/zigenv.d:/usr/lib/zigenv/hooks"
+for plugin_hook in "${ZIGENV_ROOT}/plugins/"*/etc/zigenv.d; do
+  ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH}:${plugin_hook}"
+done
+ZIGENV_HOOK_PATH="${ZIGENV_HOOK_PATH#:}"
+export ZIGENV_HOOK_PATH
+
+shopt -u nullglob
+
+
+command="$1"
+case "$command" in
+"" )
+  { zigenv---version
+    zigenv-help
+  } | abort
+  ;;
+-v | --version )
+  exec zigenv---version
+  ;;
+-h | --help )
+  exec zigenv-help
+  ;;
+* )
+  command_path="$(command -v "zigenv-$command" || true)"
+  if [ -z "$command_path" ]; then
+    if [ "$command" == "shell" ]; then
+      abort "shell integration not enabled. Run \`zigenv init' for instructions."
+    else
+      abort "no such command \`$command'"
+    fi
+  fi
+
+  shift 1
+  if [ "$1" = --help ]; then
+    if [[ "$command" == "sh-"* ]]; then
+      echo "zigenv help \"$command\""
+    else
+      exec zigenv-help "$command"
+    fi
+  else
+    exec "$command_path" "$@"
+  fi
+  ;;
+esac

@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# Summary: Display the full path to an executable
+#
+# Usage: zigenv which <command>
+#
+# Displays the full path to the executable that zigenv will invoke when
+# you run the given command.
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  exec zigenv-shims --short
+fi
+
+remove_from_path() {
+  local path_to_remove="$1"
+  local path_before
+  local result=":${PATH//\~/$HOME}:"
+  while [ "$path_before" != "$result" ]; do
+    path_before="$result"
+    result="${result//:$path_to_remove:/:}"
+  done
+  result="${result%:}"
+  echo "${result#:}"
+}
+
+ZIGENV_COMMAND="$1"
+
+if [ -z "$ZIGENV_COMMAND" ]; then
+  zigenv-help --usage which >&2
+  exit 1
+fi
+
+ZIGENV_VERSION="${ZIGENV_VERSION:-$(zigenv-version-name)}"
+
+if [ "$ZIGENV_VERSION" = "system" ]; then
+  PATH="$(remove_from_path "${ZIGENV_ROOT}/shims")" \
+  ZIGENV_COMMAND_PATH="$(command -v "$ZIGENV_COMMAND" || true)"
+else
+  ZIGENV_COMMAND_PATH="${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}/bin/${ZIGENV_COMMAND}"
+fi
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`zigenv-hooks which`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -x "$ZIGENV_COMMAND_PATH" ]; then
+  echo "$ZIGENV_COMMAND_PATH"
+elif [ "$ZIGENV_VERSION" != "system" ] && [ ! -d "${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}" ]; then
+  echo "zigenv: version \`$ZIGENV_VERSION' is not installed (set by $(zigenv-version-origin))" >&2
+  exit 1
+else
+  echo "zigenv: $ZIGENV_COMMAND: command not found" >&2
+
+  versions="$(zigenv-whence "$ZIGENV_COMMAND" || true)"
+  if [ -n "$versions" ]; then
+    { echo
+      echo "The \`$1' command exists in these Zig versions:"
+      echo "$versions" | sed 's/^/  /g'
+      echo
+    } >&2
+  fi
+
+  exit 127
+fi

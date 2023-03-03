@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Summary: List all Zig versions that contain the given executable
+# Usage: zigenv whence [--path] <command>
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  echo --path
+  exec zigenv-shims --short
+fi
+
+if [ "$1" = "--path" ]; then
+  print_paths="1"
+  shift
+else
+  print_paths=""
+fi
+
+whence() {
+  local command="$1"
+  zigenv-versions --bare | while read -r version; do
+    path="$(zigenv-prefix "$version")/bin/${command}"
+    if [ -x "$path" ]; then
+      [ "$print_paths" ] && echo "$path" || echo "$version"
+    fi
+  done
+}
+
+ZIGENV_COMMAND="$1"
+if [ -z "$ZIGENV_COMMAND" ]; then
+  zigenv-help --usage whence >&2
+  exit 1
+fi
+
+result="$(whence "$ZIGENV_COMMAND")"
+[ -n "$result" ] && echo "$result"

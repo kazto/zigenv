@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Usage: zigenv completions <command> [arg1 arg2...]
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+COMMAND="$1"
+if [ -z "$COMMAND" ]; then
+  zigenv-help --usage completions >&2
+  exit 1
+fi
+
+# Provide zigenv completions
+if [ "$COMMAND" = "--complete" ]; then
+  exec zigenv-commands
+fi
+
+COMMAND_PATH="$(command -v "zigenv-$COMMAND" || command -v "zigenv-sh-$COMMAND")"
+
+# --help is provided automatically
+echo --help
+
+if grep -iE "^([#%]|--|//) provide zigenv completions" "$COMMAND_PATH" >/dev/null; then
+  shift
+  exec "$COMMAND_PATH" --complete "$@"
+fi

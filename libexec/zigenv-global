@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the global Zig version
+#
+# Usage: zigenv global <version>
+#
+# Sets the global Zig version. You can override the global version at
+# any time by setting a directory-specific version with `zigenv local'
+# or by setting the `ZIGENV_VERSION' environment variable.
+#
+# <version> should be a string matching a Zig version known to zigenv.
+# The special version string `system' will use your default system Zig.
+# Run `zigenv versions' for a list of available Zig versions.
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  echo --unset
+  echo system
+  exec zigenv-versions --bare
+fi
+
+ZIGENV_VERSION="$1"
+ZIGENV_VERSION_FILE="${ZIGENV_ROOT:?}/version"
+
+if [ "$1" = "--unset" ]; then
+  exec rm -f "$ZIGENV_VERSION_FILE"
+fi
+
+if [ -n "$ZIGENV_VERSION" ]; then
+  zigenv-version-file-write "$ZIGENV_VERSION_FILE" "$ZIGENV_VERSION"
+else
+  zigenv-version-file-read "$ZIGENV_VERSION_FILE" || echo system
+fi

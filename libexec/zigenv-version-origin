@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Summary: Explain how the current Zig version is set
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+unset ZIGENV_VERSION_ORIGIN
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`zigenv-hooks version-origin`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -n "$ZIGENV_VERSION_ORIGIN" ]; then
+  echo "$ZIGENV_VERSION_ORIGIN"
+elif [ -n "$ZIGENV_VERSION" ]; then
+  echo "ZIGENV_VERSION environment variable"
+else
+  zigenv-version-file
+fi

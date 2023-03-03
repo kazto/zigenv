@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  exec zigenv-rehash --complete
+fi
+
+shell="$(basename "${ZIGENV_SHELL:-$SHELL}")"
+
+# When zigenv shell integration is enabled, delegate to zigenv-rehash,
+# then tell the shell to empty its command lookup cache.
+zigenv-rehash
+
+case "$shell" in
+fish )
+  # no rehash support
+  ;;
+* )
+  echo "hash -r 2>/dev/null || true"
+  ;;
+esac

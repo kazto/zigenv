@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary: Run an executable with the selected Zig version
+#
+# Usage: zigenv exec <command> [arg1 arg2...]
+#
+# Runs an executable by first preparing PATH so that the selected Zig
+# version's `bin' directory is at the front.
+#
+# For example, if the currently selected Zig version is 0.10.26:
+#   zigenv exec bundle install
+#
+# is equivalent to:
+#   PATH="$ZIGENV_ROOT/versions/0.10.26/bin:$PATH" bundle install
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  exec zigenv-shims --short
+fi
+
+ZIGENV_VERSION="$(zigenv-version-name)"
+ZIGENV_COMMAND="$1"
+
+if [ -z "$ZIGENV_COMMAND" ]; then
+  zigenv-help --usage exec >&2
+  exit 1
+fi
+
+export ZIGENV_VERSION
+ZIGENV_COMMAND_PATH="$(zigenv-which "$ZIGENV_COMMAND")"
+ZIGENV_BIN_PATH="${ZIGENV_COMMAND_PATH%/*}"
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`zigenv-hooks exec`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+shift 1
+if [ "$ZIGENV_VERSION" != "system" ]; then
+  export PATH="${ZIGENV_BIN_PATH}:${PATH}"
+fi
+exec -a "$ZIGENV_COMMAND" "$ZIGENV_COMMAND_PATH" "$@"

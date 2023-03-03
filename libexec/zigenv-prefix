@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Summary: Display prefix for a Zig version
+# Usage: zigenv prefix [<version>]
+#
+# Displays the directory where a Zig version is installed. If no
+# version is given, `zigenv prefix' displays the location of the
+# currently selected version.
+
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+# Provide zigenv completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec zigenv-versions --bare
+fi
+
+if [ -n "$1" ]; then
+  export ZIGENV_VERSION="$1"
+elif [ -z "$ZIGENV_VERSION" ]; then
+  ZIGENV_VERSION="$(zigenv-version-name)"
+fi
+
+if [ "$ZIGENV_VERSION" = "system" ]; then
+  if NODE_PATH="$(zigenv-which node)"; then
+    NODE_PATH="${NODE_PATH%/*}"
+    ZIGENV_PREFIX_PATH="${NODE_PATH%/bin}"
+    echo "${ZIGENV_PREFIX_PATH:-/}"
+    exit
+  else
+    echo "zigenv: system version not found in PATH" >&2
+    exit 1
+  fi
+fi
+
+ZIGENV_PREFIX_PATH="${ZIGENV_ROOT}/versions/${ZIGENV_VERSION}"
+if [ ! -d "$ZIGENV_PREFIX_PATH" ]; then
+  echo "zigenv: version \`${ZIGENV_VERSION}' not installed" >&2
+  exit 1
+fi
+
+echo "$ZIGENV_PREFIX_PATH"

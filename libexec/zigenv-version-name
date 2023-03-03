@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Summary: Show the current Zig version
+set -e
+[ -n "$ZIGENV_DEBUG" ] && set -x
+
+if [ -z "$ZIGENV_VERSION" ]; then
+  ZIGENV_VERSION_FILE="$(zigenv-version-file)"
+  ZIGENV_VERSION="$(zigenv-version-file-read "$ZIGENV_VERSION_FILE" || true)"
+fi
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`zigenv-hooks version-name`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -z "$ZIGENV_VERSION" ] || [ "$ZIGENV_VERSION" = "system" ]; then
+  echo "system"
+  exit
+fi
+
+version_exists() {
+  local version="$1"
+  [ -d "${ZIGENV_ROOT}/versions/${version}" ]
+}
+
+if version_exists "$ZIGENV_VERSION"; then
+  echo "$ZIGENV_VERSION"
+elif version_exists "${ZIGENV_VERSION/v/}"; then
+  echo "${ZIGENV_VERSION/v/}"
+elif version_exists "${ZIGENV_VERSION#node-}"; then
+  echo "${ZIGENV_VERSION#node-}"
+elif version_exists "${ZIGENV_VERSION#node-v}"; then
+  echo "${ZIGENV_VERSION#node-v}"
+else
+  echo "zigenv: version \`$ZIGENV_VERSION' is not installed (set by $(zigenv-version-origin))" >&2
+  exit 1
+fi
