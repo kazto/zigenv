@@ -29,3 +29,6 @@ for v in $FILES
 do
     copy2zig $v
 done
+
+chmod +x bin/*
+chmod +x libexec/*
